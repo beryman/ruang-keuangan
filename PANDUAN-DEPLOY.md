@@ -4,7 +4,7 @@
 
 1. Unggah folder `ruang-keuangan` ini ke repositori GitHub, atau pilih folder ini sebagai root project saat membuat project Vercel.
 2. Framework preset: **Other**. Build command dan output directory dapat dikosongkan karena ini aplikasi statis.
-3. Deploy. Buka URL HTTPS hasil deploy untuk mengaktifkan service worker dan pemasangan PWA.
+3. Pastikan folder `api/` ikut diunggah. Deploy. Buka URL HTTPS hasil deploy untuk mengaktifkan service worker, pemasangan PWA, dan endpoint OCR Gemini.
 
 ## Pasang di perangkat
 
@@ -12,11 +12,11 @@
 - **Android:** buka URL di Chrome → menu ⋮ → Install app / Tambahkan ke layar utama.
 - **Mac:** buka URL di Chrome atau Edge → ikon Install di bilah alamat. Di Safari macOS, gunakan Tambahkan ke Dock bila tersedia.
 
-Aplikasi menyimpan perubahan lokal dan shell aplikasi tersedia offline setelah kunjungan pertama. Data lokal tiap browser/perangkat terpisah sampai Supabase dihubungkan. Scan Nota Gemini hanya dapat dipakai dari alamat HTTPS, dengan API key dan izin domain yang benar; membuka `index.html` langsung sebagai `file://` akan memblokir koneksi API.
+Aplikasi menyimpan perubahan lokal dan shell aplikasi tersedia offline setelah kunjungan pertama. Data lokal tiap browser/perangkat terpisah sampai Supabase dihubungkan. Scan Nota Gemini memerlukan versi yang menyertakan `api/gemini.js` dan harus dibuka melalui HTTPS. Membuka `index.html` langsung sebagai `file://` atau memakai deployment lama tidak menyediakan endpoint OCR.
 
 ## Supabase
 
-Koneksi Supabase tersedia melalui menu Pengaturan setelah URL project dan public anon key milik Anda dimasukkan. Buat project dan tabel snapshot mengikuti langkah di bawah. Gunakan **Project URL** dan **anon/public key**; jangan pernah menaruh `service_role` key di aplikasi browser.
+Koneksi Supabase tersedia melalui menu Pengaturan setelah URL project dan public anon key milik Anda dimasukkan. Buat project dan tabel snapshot mengikuti langkah di bawah. Gunakan **Project URL** dan **anon/public key**; jangan pernah menaruh `service_role` key di aplikasi browser. (Opsional untuk Gemini) Tambahkan `GEMINI_API_KEY` di Vercel **Project → Settings → Environment Variables** agar key tidak perlu diisi atau disimpan di browser. Jika key dimasukkan lewat aplikasi, batasi key pada **Generative Language API**.
 
 
 ## Aktifkan database Supabase

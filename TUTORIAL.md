@@ -15,7 +15,7 @@ Membuka file langsung cocok untuk mencoba fitur lokal. Scan Nota Gemini dan kame
 
 1. Masuk atau daftar di GitHub, lalu buat repository baru, misalnya `manajemen-uangku`.
 2. Buka repository tersebut dan pilih **Add file → Upload files**.
-3. Dari folder hasil ekstrak, unggah seluruh isi folder `ruang-keuangan`: `index.html`, `manifest.webmanifest`, `app-icon.svg`, `sw.js`, `vercel.json`, dan folder `kos`.
+3. Dari folder hasil ekstrak, unggah seluruh isi folder `ruang-keuangan`, termasuk `index.html`, `manifest.webmanifest`, `app-icon.svg`, `sw.js`, `vercel.json`, serta folder `api`, `supabase`, dan `kos`.
 4. Tekan **Commit changes**.
 
 ### Terbitkan lewat Vercel
@@ -37,7 +37,9 @@ Gunakan alamat HTTPS Vercel yang sama:
 - **Android:** buka alamat di Chrome → tekan menu ⋮ → **Install app / Pasang aplikasi**. Jika pilihan itu belum muncul, pilih **Add to Home screen**.
 - **Mac:** buka di Chrome atau Edge, lalu pilih ikon **Install** di bilah alamat atau menu browser. Safari macOS dapat memakai **Add to Dock** bila tersedia.
 
-Setelah instalasi, ikon aplikasi muncul di layar utama/Dock. Buka sekali saat online agar cangkang aplikasi tersimpan untuk pemakaian offline. Scan Nota dengan Gemini memerlukan internet, API key aktif, dan akses API Gemini yang diizinkan untuk domain Vercel.
+Setelah instalasi, ikon aplikasi muncul di layar utama/Dock. Buka sekali saat online agar cangkang aplikasi tersimpan untuk pemakaian offline. Scan Nota dengan Gemini memerlukan internet dan API key aktif. Versi ini memakai endpoint serverless Vercel di folder `api/`, jadi domain harus menjalankan versi paket terbaru.
+
+Untuk scan nota, masukkan API key Gemini di Pengaturan Scan Nota. Pilihan yang lebih aman: di Vercel **Project → Settings → Environment Variables**, tambahkan `GEMINI_API_KEY`, lalu redeploy. Jika API key diisi lewat aplikasi, batasi penggunaannya pada **Generative Language API**.
 
 ## D. Simpan dan backup data
 
