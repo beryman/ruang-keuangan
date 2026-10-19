@@ -1,4 +1,38 @@
-// Vercel serverless proxy for Gemini. The API key is passed per request and never persisted here.
+// Vercel serverless proxy untuk Gemini.
+// API key dikirim per permintaan (atau dari env GEMINI_API_KEY) dan tidak pernah disimpan di sini.
+
+const FALLBACK_MODELS = ['gemini-2.5-flash'];
+const RETRYABLE = [429, 500, 502, 503, 504];
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// Gemini REST menerima subset OpenAPI dengan nama tipe huruf besar (STRING, OBJECT, ...).
+function toGeminiSchema(node) {
+  if (Array.isArray(node)) return node.map(toGeminiSchema);
+  if (!node || typeof node !== 'object') return node;
+  const out = {};
+  for (const [k, v] of Object.entries(node)) {
+    if (k === 'type' && typeof v === 'string') out.type = v.toUpperCase();
+    else if (k === 'additionalProperties' || k === '$schema') continue;
+    else out[k] = toGeminiSchema(v);
+  }
+  return out;
+}
+
+async function callGemini(model, key, body, timeoutMs) {
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(timeoutMs),
+    },
+  );
+  let json = {};
+  try { json = await res.json(); } catch { json = {}; }
+  return { ok: res.ok, status: res.status, json };
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store, max-age=0');
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -13,7 +47,8 @@ module.exports = async function handler(req, res) {
     catch { return res.status(400).json({ error: 'Isi permintaan OCR tidak valid.' }); }
   }
   const { apiKey, model, prompt, image, schema } = input || {};
-  const key = (process.env.GEMINI_API_KEY || apiKey || '').trim();
+  // Key yang diisi pengguna di aplikasi diprioritaskan; jika kosong baru pakai env Vercel.
+  const key = String(apiKey || process.env.GEMINI_API_KEY || '').trim();
   if (!key) {
     return res.status(400).json({ error: 'API key belum tersedia. Isi di Pengaturan Gemini atau tambahkan GEMINI_API_KEY pada Environment Variables Vercel.' });
   }
@@ -23,48 +58,71 @@ module.exports = async function handler(req, res) {
   if (typeof prompt !== 'string' || !prompt.trim() || prompt.length > 12000) {
     return res.status(400).json({ error: 'Prompt OCR tidak valid.' });
   }
-  if (image && (typeof image.data !== 'string' || image.data.length > 4_000_000 || !/^image\/(jpeg|png|webp)$/.test(image.mimeType || ''))) {
-    return res.status(413).json({ error: 'Foto harus berupa JPG, PNG, atau WebP dan tidak melebihi batas ukuran.' });
+  let imageData = '';
+  if (image) {
+    imageData = String(image.data || '').replace(/^data:[^,]+,/, '');
+    if (!imageData || imageData.length > 4_000_000 || !/^image\/(jpeg|png|webp)$/.test(image.mimeType || '')) {
+      return res.status(413).json({ error: 'Foto harus berupa JPG, PNG, atau WebP dan tidak melebihi batas ukuran.' });
+    }
   }
 
-  const parts = [{ text: prompt }];
-  if (image) parts.push({ inline_data: { mime_type: image.mimeType, data: image.data } });
-  const requestBody = {
-    contents: [{ role: 'user', parts }],
-    generationConfig: { maxOutputTokens: 4096 },
-  };
-  if (schema) {
-    requestBody.generationConfig.responseFormat = {
-      text: { mimeType: 'APPLICATION_JSON', schema },
-    };
+  // Urutan instruksi: gambar dulu, teks sesudahnya (rekomendasi Google untuk OCR/visi).
+  const parts = [];
+  if (image) parts.push({ inline_data: { mime_type: image.mimeType, data: imageData } });
+  parts.push({ text: prompt });
+
+  const baseConfig = { maxOutputTokens: 8192, temperature: 0 };
+  const jsonConfig = schema
+    ? { responseMimeType: 'application/json', responseSchema: toGeminiSchema(schema) }
+    : {};
+  // Konfigurasi "penuh" (resolusi gambar tinggi) dan konfigurasi minimal sebagai cadangan.
+  const fullConfig = { ...baseConfig, ...jsonConfig, ...(image ? { mediaResolution: 'MEDIA_RESOLUTION_HIGH' } : {}) };
+  const minimalConfig = { ...baseConfig, ...jsonConfig };
+
+  const models = [model, ...FALLBACK_MODELS.filter(m => m !== model)];
+  let last = null;
+  let useMinimal = false;
+  const t0 = Date.now();
+  const remaining = () => 54000 - (Date.now() - t0); // batas total < maxDuration 60 dtk
+
+  for (let m = 0; m < models.length; m++) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (remaining() < 5000) break;
+      let out;
+      try {
+        out = await callGemini(models[m], key, {
+          contents: [{ role: 'user', parts }],
+          generationConfig: useMinimal ? minimalConfig : fullConfig,
+        }, Math.min(45000, remaining()));
+      } catch (error) {
+        const timedOut = error?.name === 'TimeoutError' || error?.name === 'AbortError';
+        last = { status: timedOut ? 504 : 502, error: timedOut ? 'Gemini terlalu lama merespons. Coba lagi, atau potong foto hanya pada bagian nota.' : `Server Vercel gagal menghubungi Gemini: ${error.message || 'koneksi gagal'}` };
+        if (!timedOut && attempt < 2) { await sleep(800 * (attempt + 1)); continue; }
+        break;
+      }
+
+      if (out.ok) {
+        out.json.modelUsed = models[m];
+        return res.status(200).json(out.json);
+      }
+
+      const msg = out.json?.error?.message || `Gemini API gagal (${out.status}).`;
+      last = { status: out.status, error: msg };
+
+      // Parameter opsional (mis. mediaResolution) tidak dikenali model ini -> ulangi dengan konfigurasi minimal.
+      if (out.status === 400 && !useMinimal && /mediaResolution|unknown name|invalid json payload|not supported/i.test(msg)) {
+        useMinimal = true; attempt--; continue;
+      }
+      // Model tidak ada / tidak diizinkan -> coba model cadangan.
+      if (out.status === 404) break;
+      // Server Gemini sibuk / rate limit sementara -> tunggu sebentar lalu ulangi.
+      if (RETRYABLE.includes(out.status) && attempt < 2) { await sleep(1000 * (attempt + 1)); continue; }
+      break;
+    }
+    // 400/401/403 tidak membaik dengan model lain.
+    if (last && [400, 401, 403, 504].includes(last.status)) break;
   }
 
-  let upstream;
-  try {
-    upstream = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': key,
-        },
-        body: JSON.stringify(requestBody),
-        signal: AbortSignal.timeout(60000),
-      },
-    );
-  } catch (error) {
-    return res.status(502).json({ error: `Server Vercel gagal menghubungi Gemini: ${error.message || 'koneksi gagal'}` });
-  }
-
-  let result;
-  try { result = await upstream.json(); }
-  catch { return res.status(502).json({ error: 'Gemini mengembalikan respons yang tidak dapat dibaca.' }); }
-
-  if (!upstream.ok) {
-    const message = result?.error?.message || `Gemini API gagal (${upstream.status}).`;
-    const status = [400, 401, 403, 404, 429].includes(upstream.status) ? upstream.status : 502;
-    return res.status(status).json({ error: message, upstreamStatus: upstream.status });
-  }
-  return res.status(200).json(result);
+  const status = [400, 401, 403, 404, 429].includes(last?.status) ? last.status : 502;
+  return res.status(status).json({ error: last?.error || 'Gemini tidak merespons.', upstreamStatus: last?.status });
 };

@@ -39,7 +39,7 @@ Gunakan alamat HTTPS Vercel yang sama:
 
 Setelah instalasi, ikon aplikasi muncul di layar utama/Dock. Buka sekali saat online agar cangkang aplikasi tersimpan untuk pemakaian offline. Scan Nota dengan Gemini memerlukan internet dan API key aktif. Versi ini memakai endpoint serverless Vercel di folder `api/`, jadi domain harus menjalankan versi paket terbaru.
 
-Untuk scan nota, masukkan API key Gemini di Pengaturan Scan Nota. Pilihan yang lebih aman: di Vercel **Project → Settings → Environment Variables**, tambahkan `GEMINI_API_KEY`, lalu redeploy. Jika API key diisi lewat aplikasi, batasi penggunaannya pada **Generative Language API**.
+Untuk scan nota, buka menu **Scan Nota** (pribadi) atau tab Scan Nota di **Rosario**, lalu masukkan API key Gemini di Pengaturan Gemini. Foto dibaca otomatis setelah dipilih. Pilihan yang lebih aman: di Vercel **Project → Settings → Environment Variables**, tambahkan `GEMINI_API_KEY`, lalu redeploy. Jika API key diisi lewat aplikasi, batasi penggunaannya pada **Generative Language API**.
 
 ## D. Simpan dan backup data
 
@@ -53,9 +53,10 @@ Sinkronisasi lintas perangkat tersedia setelah menghubungkan project Supabase. I
 1. Buat project Supabase gratis, lalu buka **SQL Editor**.
 2. Buka file `supabase/schema.sql` dari paket aplikasi, salin seluruh SQL, dan jalankan di project Anda.
 3. Dari Supabase **Project Settings → API**, salin Project URL dan anon/public key.
-4. Setelah versi terbaru aplikasi dideploy ke Vercel, buka menu **Pengaturan → Database Supabase**. Masukkan URL dan key, lalu pilih **Simpan konfigurasi**.
-5. Pilih **Buat akun** dengan email dan password yang akan dipakai di semua perangkat. Jika Supabase meminta verifikasi email, buka email tersebut; setelah terverifikasi, kembali ke aplikasi dan tekan **Login & cek database**.
-6. Pada perangkat pertama, bila belum ada data cloud, aplikasi mengunggah data lokal sebagai snapshot awal. Pada perangkat lain, login dengan akun yang sama lalu pilih **Pulihkan dari Supabase** untuk menyalin data cloud ke perangkat itu.
+4. **Cara termudah (disarankan):** di Vercel **Project → Settings → Environment Variables**, tambahkan `SUPABASE_URL` (Project URL) dan `SUPABASE_ANON_KEY` (anon/public key), lalu redeploy. Setiap perangkat baru otomatis terhubung tanpa menempel URL dan key lagi. Pada Supabase **Authentication → URL Configuration**, isi *Site URL* dengan alamat Vercel Anda agar tautan reset password dan verifikasi email kembali ke aplikasi.
+   Alternatif manual: buka **Pengaturan → Akun & Sinkronisasi → Koneksi database**, isi URL dan key, lalu **Simpan koneksi**.
+5. Di **Pengaturan → Akun & Sinkronisasi**, isi email dan password lalu tekan **Masuk** (atau Enter). Belum punya akun? Pilih tab **Daftar**. Lupa password? Tekan **Lupa password?**, buka tautan di email, lalu atur password baru. Jika Supabase meminta verifikasi email, verifikasi dulu lalu masuk.
+6. Pada perangkat pertama, bila belum ada data cloud, aplikasi mengunggah data lokal sebagai snapshot awal. Pada perangkat lain yang masih kosong, cukup masuk dengan akun yang sama: data cloud otomatis dipulihkan. Jika perangkat itu sudah berisi data yang berbeda, aplikasi meminta Anda memilih **Pakai data cloud** atau **Pakai data perangkat ini**.
 7. Aktifkan **Sinkronkan otomatis**. Jika aplikasi memberi tahu bahwa cloud berubah dari perangkat lain, pulihkan cloud sebelum melanjutkan agar perubahan baru tidak tertimpa.
 
 Data keuangan dan Kos berada pada snapshot privat per akun login. SQL menerapkan Row Level Security. Jangan pernah memakai atau membagikan `service_role` key; aplikasi hanya memerlukan anon/public key.
