@@ -12,11 +12,11 @@
 - **Android:** buka URL di Chrome → menu ⋮ → Install app / Tambahkan ke layar utama.
 - **Mac:** buka URL di Chrome atau Edge → ikon Install di bilah alamat. Di Safari macOS, gunakan Tambahkan ke Dock bila tersedia.
 
-Aplikasi menyimpan perubahan lokal dan shell aplikasi tersedia offline setelah kunjungan pertama. Data lokal tiap browser/perangkat masih terpisah. Sinkronisasi lintas perangkat belum aktif.
+Aplikasi menyimpan perubahan lokal dan shell aplikasi tersedia offline setelah kunjungan pertama. Data lokal tiap browser/perangkat terpisah sampai Supabase dihubungkan. Scan Nota Gemini hanya dapat dipakai dari alamat HTTPS, dengan API key dan izin domain yang benar; membuka `index.html` langsung sebagai `file://` akan memblokir koneksi API.
 
 ## Supabase
 
-Belum ada koneksi Supabase pada aplikasi karena URL project dan public anon key belum tersedia. Untuk sinkronisasi lintas perangkat, langkah berikutnya adalah membuat project Supabase, mengaktifkan login pengguna, membuat tabel snapshot dengan Row Level Security, lalu menambahkan koneksi aplikasi. Gunakan **Project URL** dan **anon/public key**; jangan pernah menaruh `service_role` key di aplikasi browser. Database belum menerima data apa pun.
+Koneksi Supabase tersedia melalui menu Pengaturan setelah URL project dan public anon key milik Anda dimasukkan. Buat project dan tabel snapshot mengikuti langkah di bawah. Gunakan **Project URL** dan **anon/public key**; jangan pernah menaruh `service_role` key di aplikasi browser.
 
 
 ## Aktifkan database Supabase

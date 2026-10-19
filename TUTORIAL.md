@@ -7,7 +7,7 @@
 3. Buka folder itu dan klik dua kali `index.html` untuk mencoba aplikasi.
 4. Menu Kos berada di sidebar. Data transaksi pribadi, Rosario, dan Kos disimpan oleh browser pada perangkat yang digunakan.
 
-Membuka file langsung cocok untuk mencoba aplikasi. Agar dapat dipasang sebagai aplikasi di iPhone, iPad, Android, atau Mac, deploy dulu ke alamat HTTPS menggunakan langkah berikut.
+Membuka file langsung cocok untuk mencoba fitur lokal. Scan Nota Gemini dan kamera perlu alamat HTTPS; dari `file://` browser memblokir koneksi ke API. Deploy dulu ke alamat HTTPS menggunakan langkah berikut.
 
 ## B. Deploy gratis ke Vercel
 
@@ -37,13 +37,13 @@ Gunakan alamat HTTPS Vercel yang sama:
 - **Android:** buka alamat di Chrome → tekan menu ⋮ → **Install app / Pasang aplikasi**. Jika pilihan itu belum muncul, pilih **Add to Home screen**.
 - **Mac:** buka di Chrome atau Edge, lalu pilih ikon **Install** di bilah alamat atau menu browser. Safari macOS dapat memakai **Add to Dock** bila tersedia.
 
-Setelah instalasi, ikon aplikasi muncul di layar utama/Dock. Buka sekali saat online agar cangkang aplikasi tersimpan untuk pemakaian offline. Fitur yang perlu internet, seperti Scan Nota dengan Gemini, tetap memerlukan koneksi.
+Setelah instalasi, ikon aplikasi muncul di layar utama/Dock. Buka sekali saat online agar cangkang aplikasi tersimpan untuk pemakaian offline. Scan Nota dengan Gemini memerlukan internet, API key aktif, dan akses API Gemini yang diizinkan untuk domain Vercel.
 
 ## D. Simpan dan backup data
 
 Saat ini data tersimpan lokal di browser/perangkat. Artinya, data yang dibuat di iPhone belum otomatis muncul di Android atau Mac. Jangan hapus data situs/browser sebelum mengekspor atau mencadangkan data. Modul Kos memiliki menu **Backup & Restore** untuk backup JSON; transaksi utama dapat diekspor dari menu masing-masing.
 
-Sinkronisasi lintas perangkat memakai Supabase belum aktif. Perlu dibuat project Supabase, login pengguna, aturan keamanan Row Level Security, dan koneksi sinkronisasi aplikasi. Untuk melanjutkan bagian ini, siapkan **Project URL** dan **anon/public key** dari Supabase. Jangan membagikan atau memasukkan `service_role` key di aplikasi browser.
+Sinkronisasi lintas perangkat tersedia setelah menghubungkan project Supabase. Ikuti bagian E. Siapkan **Project URL** dan **anon/public key**; jangan masukkan `service_role` key di aplikasi browser.
 
 
 ## E. Hubungkan Supabase
