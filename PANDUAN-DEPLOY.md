@@ -17,3 +17,16 @@ Aplikasi menyimpan perubahan lokal dan shell aplikasi tersedia offline setelah k
 ## Supabase
 
 Belum ada koneksi Supabase pada aplikasi karena URL project dan public anon key belum tersedia. Untuk sinkronisasi lintas perangkat, langkah berikutnya adalah membuat project Supabase, mengaktifkan login pengguna, membuat tabel snapshot dengan Row Level Security, lalu menambahkan koneksi aplikasi. Gunakan **Project URL** dan **anon/public key**; jangan pernah menaruh `service_role` key di aplikasi browser. Database belum menerima data apa pun.
+
+
+## Aktifkan database Supabase
+
+1. Buat project di Supabase dan tunggu provisioning selesai.
+2. Buka **SQL Editor → New query**, salin isi `supabase/schema.sql`, lalu pilih **Run**.
+3. Pada Supabase **Authentication → URL Configuration**, tambahkan alamat Vercel sebagai Site URL dan Redirect URL.
+4. Deploy ulang versi aplikasi yang memiliki `supabase-sync.js`.
+5. Di aplikasi buka **Pengaturan → Database Supabase**. Isi Project URL dan anon/public key dari **Project Settings → API**. Tekan **Simpan konfigurasi**, lalu **Buat akun** atau **Login**.
+6. Saat login pertama kali tanpa data cloud, data browser ini dikirim sebagai snapshot awal. Jika database sudah berisi data, pilih **Pulihkan dari Supabase** atau **Unggah perangkat ini** dengan hati-hati. Pulihkan mengganti data lokal perangkat; unggah mengganti snapshot cloud.
+7. Setelah dua perangkat login ke akun yang sama, aktifkan **Sinkronkan otomatis**. Jika perangkat lain lebih dahulu mengubah cloud, aplikasi menahan unggahan otomatis agar snapshot yang lebih baru tidak tertimpa; pulihkan data cloud pada perangkat tersebut.
+
+Email/password pengguna tidak disimpan oleh aplikasi. Token login dan anon key disimpan lokal pada browser. Tabel memakai RLS dengan `auth.uid() = user_id`, jadi akun hanya bisa mengakses snapshot miliknya.

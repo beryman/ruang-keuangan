@@ -44,3 +44,16 @@ Setelah instalasi, ikon aplikasi muncul di layar utama/Dock. Buka sekali saat on
 Saat ini data tersimpan lokal di browser/perangkat. Artinya, data yang dibuat di iPhone belum otomatis muncul di Android atau Mac. Jangan hapus data situs/browser sebelum mengekspor atau mencadangkan data. Modul Kos memiliki menu **Backup & Restore** untuk backup JSON; transaksi utama dapat diekspor dari menu masing-masing.
 
 Sinkronisasi lintas perangkat memakai Supabase belum aktif. Perlu dibuat project Supabase, login pengguna, aturan keamanan Row Level Security, dan koneksi sinkronisasi aplikasi. Untuk melanjutkan bagian ini, siapkan **Project URL** dan **anon/public key** dari Supabase. Jangan membagikan atau memasukkan `service_role` key di aplikasi browser.
+
+
+## E. Hubungkan Supabase
+
+1. Buat project Supabase gratis, lalu buka **SQL Editor**.
+2. Buka file `supabase/schema.sql` dari paket aplikasi, salin seluruh SQL, dan jalankan di project Anda.
+3. Dari Supabase **Project Settings → API**, salin Project URL dan anon/public key.
+4. Setelah versi terbaru aplikasi dideploy ke Vercel, buka menu **Pengaturan → Database Supabase**. Masukkan URL dan key, lalu pilih **Simpan konfigurasi**.
+5. Pilih **Buat akun** dengan email dan password yang akan dipakai di semua perangkat. Jika Supabase meminta verifikasi email, buka email tersebut; setelah terverifikasi, kembali ke aplikasi dan tekan **Login & cek database**.
+6. Pada perangkat pertama, bila belum ada data cloud, aplikasi mengunggah data lokal sebagai snapshot awal. Pada perangkat lain, login dengan akun yang sama lalu pilih **Pulihkan dari Supabase** untuk menyalin data cloud ke perangkat itu.
+7. Aktifkan **Sinkronkan otomatis**. Jika aplikasi memberi tahu bahwa cloud berubah dari perangkat lain, pulihkan cloud sebelum melanjutkan agar perubahan baru tidak tertimpa.
+
+Data keuangan dan Kos berada pada snapshot privat per akun login. SQL menerapkan Row Level Security. Jangan pernah memakai atau membagikan `service_role` key; aplikasi hanya memerlukan anon/public key.

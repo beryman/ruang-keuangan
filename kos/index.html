@@ -358,8 +358,8 @@ async function commit(text,mutator,{render=true}={}){
 async function hydrate(){
  let local=null,remote=null;try{const raw=storageGet(KEY);if(raw)local=migrateRaw(JSON.parse(raw))}catch(_){ }
  try{const raw=await dbGet('state');if(raw)remote=migrateRaw(typeof raw==='string'?JSON.parse(raw):raw)}catch(e){console.warn('KosMan hydrate IDB:',e)}
- const lt=Date.parse(local?.meta?.updatedAt||0)||0,rt=Date.parse(remote?.meta?.updatedAt||0)||0;
- APP.state=rt>lt?(remote||local||freshState()):(local||remote||freshState());normalizeState(APP.state);storageSet(KEY,JSON.stringify(APP.state));
+ const forceCloud=storageGet('kosman_cloud_force_local')==='1';storageRemove('kosman_cloud_force_local');const lt=Date.parse(local?.meta?.updatedAt||0)||0,rt=Date.parse(remote?.meta?.updatedAt||0)||0;
+ APP.state=forceCloud?(local||remote||freshState()):(rt>lt?(remote||local||freshState()):(local||remote||freshState()));normalizeState(APP.state);storageSet(KEY,JSON.stringify(APP.state));
  if(rt>lt)toast('Data terbaru dipulihkan dari storage lokal');
  await persistState({broadcast:false});
 }
@@ -655,7 +655,7 @@ async function boot(){
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&APP.bootReady){const before=APP.monthStamp;rolloverCheck();if(before!==monthNow())renderAll()}});
   if(storageGet('kosman_v55_warm')==='1'){document.body.classList.add('warm');$('themeBtn').querySelector('b').textContent='Mode Normal'}
   injectViewTools();$('userPill').textContent='Administrator • Full Access';APP.bootReady=true;showView('dashboard');await persistState({broadcast:false});
-  cloudLoadConfig();cloudFillForm();cloudStartAutoCheck();if(CLOUD.config?.enabled)cloudBootCheck();window.KosManDiagnostics={version:'6.1.0',state:()=>normalizeState(APP.state),storage:storageHealth,refresh:viewRefresh,sync:syncFromStorage,cloudSync:cloudSyncNow,flush:()=>persistState(),clear:async()=>{APP.state=freshState();storageRemove(KEY);storageRemove('kosman_v55_warm');storageRemove(CLOUD_KEY);await dbClear();location.reload()}};
+  cloudLoadConfig();cloudFillForm();cloudStartAutoCheck();if(CLOUD.config?.enabled)cloudBootCheck();window.KosManDiagnostics={version:'6.1.0',state:()=>normalizeState(APP.state),importState:async incoming=>{APP.state=normalizeState(incoming);APP.selection={};await persistState({broadcast:false});renderAll();showView(APP.activeView);return true},storage:storageHealth,refresh:viewRefresh,sync:syncFromStorage,cloudSync:cloudSyncNow,flush:()=>persistState(),clear:async()=>{APP.state=freshState();storageRemove(KEY);storageRemove('kosman_v55_warm');storageRemove(CLOUD_KEY);await dbClear();location.reload()}};
  }catch(e){console.error('KosMan boot',e);document.body.innerHTML='<div style="padding:30px;font-family:system-ui"><h2>KosMan gagal dimuat</h2><p>'+esc(e?.message||'Error tidak diketahui')+'</p><p>Data Anda tidak dihapus. Unduh salinan data mentah sebelum mencoba lagi.</p><button id="rawBackupBtn" style="padding:9px 14px">Unduh data mentah</button></div>';const rb=document.getElementById('rawBackupBtn');if(rb)rb.onclick=async()=>{let raw=storageGet(KEY);if(!raw){try{const v=await dbGet('state');raw=typeof v==='string'?v:JSON.stringify(v)}catch(_){}}if(!raw)return alert('Tidak ada data tersimpan.');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([raw],{type:'application/json'}));a.download='kosman-raw-'+today()+'.json';document.body.appendChild(a);a.click();a.remove()}}
 }
 
