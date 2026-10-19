@@ -1,7 +1,7 @@
 // Vercel serverless proxy untuk Gemini.
 // API key dikirim per permintaan (atau dari env GEMINI_API_KEY) dan tidak pernah disimpan di sini.
 
-const FALLBACK_MODELS = ['gemini-2.5-flash'];
+const FALLBACK_MODELS = ['gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'];
 const RETRYABLE = [429, 500, 502, 503, 504];
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
