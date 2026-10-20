@@ -1,6 +1,6 @@
 // KosMan service worker — hanya menyimpan "cangkang" aplikasi agar bisa dibuka offline.
 // Data pengguna ada di IndexedDB/localStorage, BUKAN di cache ini. Permintaan /api/ dan lintas-origin tidak disentuh.
-const VERSION = 'kosman-v6.1.4';
+const VERSION = 'kosman-v6.1.5';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {

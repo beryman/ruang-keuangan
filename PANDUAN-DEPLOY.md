@@ -30,3 +30,10 @@ Koneksi Supabase tersedia melalui menu Pengaturan setelah URL project dan public
 7. Setelah dua perangkat login ke akun yang sama, aktifkan **Sinkronkan otomatis**. Jika perangkat lain lebih dahulu mengubah cloud, aplikasi menahan unggahan otomatis agar snapshot yang lebih baru tidak tertimpa; pulihkan data cloud pada perangkat tersebut.
 
 Email/password pengguna tidak disimpan oleh aplikasi. Token login dan anon key disimpan lokal pada browser. Tabel memakai RLS dengan `auth.uid() = user_id`, jadi akun hanya bisa mengakses snapshot miliknya.
+
+## Sinkronisasi Supabase (v11)
+- Jalankan `supabase/schema.sql` sekali di SQL Editor Supabase (tabel `app_snapshots` + RLS). Tidak ada perubahan skema.
+- Setelah login, sinkronisasi otomatis aktif: perubahan dikirim ±1 detik setelah disimpan, dan perubahan dari perangkat lain diterapkan tanpa memuat ulang halaman.
+- Jika dua perangkat mengubah data yang sama, aplikasi menggabungkan transaksi secara otomatis dan menyimpan salinan data lama. Kembalikan lewat Pengaturan › "Kembalikan data sebelum sinkron".
+- Saat offline atau server error, perubahan tetap aman di perangkat dan dicoba lagi otomatis.
+- "Cloud Sync" lama di dalam menu Kos dinonaktifkan saat Kos dibuka dari aplikasi ini (sudah digantikan Supabase).
