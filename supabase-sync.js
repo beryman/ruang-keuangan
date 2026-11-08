@@ -82,12 +82,12 @@ async function getRemote(){
 /* true = tersimpan; false = ada perangkat lain yang menulis lebih dulu (ulangi) */
 async function writeRemote(s,remote,payload,force){
   const uid=uidOf(s),updated_at=new Date().toISOString();
-  if(force){await api('/rest/v1/app_snapshots?on_conflict=user_id',{method:'POST',token:s.access_token,body:{user_id:uid,payload,updated_at},headers:{Prefer:'resolution=merge-duplicates,return=representation'}});return true}
+  if(force){const r=await api('/rest/v1/app_snapshots?on_conflict=user_id',{method:'POST',token:s.access_token,body:{user_id:uid,payload,updated_at},headers:{Prefer:'resolution=merge-duplicates,return=representation'}});seenAt=r?.[0]?.updated_at||seenAt;return true}
   if(!remote){
-    try{await api('/rest/v1/app_snapshots',{method:'POST',token:s.access_token,body:{user_id:uid,payload,updated_at},headers:{Prefer:'return=representation'}});return true}
+    try{const r=await api('/rest/v1/app_snapshots',{method:'POST',token:s.access_token,body:{user_id:uid,payload,updated_at},headers:{Prefer:'return=representation'}});seenAt=r?.[0]?.updated_at||seenAt;return true}
     catch(e){if(e.status===409||e.code==='23505'||/duplicate key/i.test(e.message))return false;throw e}}
   const rows=await api('/rest/v1/app_snapshots?user_id=eq.'+encodeURIComponent(uid)+'&updated_at=eq.'+encodeURIComponent(remote.updated_at),{method:'PATCH',token:s.access_token,body:{payload,updated_at},headers:{Prefer:'return=representation'}});
-  return Array.isArray(rows)&&rows.length>0}
+  if(Array.isArray(rows)&&rows.length){seenAt=rows[0].updated_at||seenAt;return true}return false}
 
 /* ---------- penggabungan ---------- */
 const parseJ=s=>{try{return s?JSON.parse(s):null}catch(_){return null}};
@@ -117,7 +117,7 @@ function hasDraft(){
   try{
     if(document.querySelector('#modal.open,#goalModal.open'))return true;
     if(document.querySelector('#draftMerchant')?.value||document.querySelector('#draftTotal')?.value||document.querySelector('#receiptFile')?.files?.length||document.querySelector('#receiptCamera')?.files?.length)return true;
-    const d=document.querySelector('.kosAppFrame')?.contentDocument;if(d&&d.querySelector('.modal-bg.open,dialog[open]'))return true;
+    const d=document.querySelector('.kosAppFrame')?.contentDocument||document;if(d.querySelector('.modal-bg.open,dialog[open]'))return true;
   }catch(_){}
   return false}
 async function applyLocal(final,before){
@@ -125,7 +125,7 @@ async function applyLocal(final,before){
   if(ph('wallet',final.wallet)!==ph('wallet',before.wallet)){if(final.wallet)ls.set(WALLET_KEY,final.wallet);else ls.del(WALLET_KEY);walletChanged=true}
   if(ph('kos',final.kos)!==ph('kos',before.kos)){if(final.kos){ls.set(KOS_KEY,final.kos);ls.set(KOS_FORCE_KEY,'1')}else{ls.del(KOS_KEY);ls.del(KOS_FORCE_KEY)}kosChanged=true}
   if(kosChanged&&final.kos){
-    try{const w=document.querySelector('.kosAppFrame')?.contentWindow;if(w?.KosManDiagnostics?.importState)await w.KosManDiagnostics.importState(JSON.parse(final.kos))}catch(_){}}
+    try{const w=document.querySelector('.kosAppFrame')?.contentWindow||window;if(w?.KosManDiagnostics?.importState)await w.KosManDiagnostics.importState(JSON.parse(final.kos))}catch(_){}}
   if(walletChanged){
     try{if(window.UangkuApp?.reloadFromStorage)window.UangkuApp.reloadFromStorage();else if(!window.__uangkuNoReload)window.__uangkuPendingReload=true}catch(_){}}
   return {walletChanged,kosChanged}}
@@ -173,7 +173,7 @@ function exclusive(fn){const p=chain.then(()=>fn());chain=p.catch(()=>{});return
 let timer=null,autoP=null,autoDirty=false,failCount=0;
 const autoEnabled=()=>ls.get(K.auto)==='1';
 const eligible=()=>autoEnabled()&&!!session()?.refresh_token;
-function schedule(delay=1200){if(!eligible())return;clearTimeout(timer);timer=setTimeout(()=>{reconcile()},delay)}
+function schedule(delay=600){if(!eligible())return;clearTimeout(timer);timer=setTimeout(()=>{reconcile()},delay)}
 function reconcile(){
   if(!eligible())return Promise.resolve();
   if(!navigator.onLine){status('Offline · perubahan tetap tersimpan di perangkat dan dikirim saat online.');return Promise.resolve()}
@@ -234,14 +234,14 @@ window.addEventListener('online',()=>schedule(300));
 window.addEventListener('focus',()=>schedule(300));
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')schedule(300);else if(eligible())reconcile()});
 setInterval(()=>{if(document.visibilityState==='visible')reconcile()},60000); // jaring pengaman
-setInterval(()=>{if(document.visibilityState!=='visible'||!eligible()||autoP||!navigator.onLine)return;probe().then(v=>{if(v!==undefined&&v!==seenAt)reconcile()}).catch(()=>{})},5000); // shortcut: polling 5 dtk, ganti Supabase Realtime bila perlu instan
+setInterval(()=>{if(document.visibilityState!=='visible'||!eligible()||autoP||!navigator.onLine)return;probe().then(v=>{if(v!==undefined&&v!==seenAt)reconcile()}).catch(()=>{})},3000); // shortcut: polling 3 dtk, ganti Supabase Realtime bila perlu instan
 {const hadLegacy=ls.get(K.choice)==='1'||ls.get(K.legacyBase)!==null;ls.del(K.choice);ls.del(K.legacyBase);if(hadLegacy&&session()?.refresh_token)ls.set(K.auto,'1')}
 {const l=localParts();lastSeen={wallet:ph('wallet',l.wallet),kos:ph('kos',l.kos)}}
 
 /* ---------- konfigurasi server, reset password, pesan error ---------- */
 let envOk=false,recoveryToken=null;
 (function(){const h=location.hash.replace(/^#/,'');if(!h)return;const q=new URLSearchParams(h);if(q.get('type')==='recovery'&&q.get('access_token')){recoveryToken=q.get('access_token');history.replaceState(null,'',location.pathname+location.search)}else if(q.get('error_description')){status('Tautan tidak valid atau kedaluwarsa: '+q.get('error_description'));history.replaceState(null,'',location.pathname+location.search)}})();
-async function loadEnvConfig(){try{const r=await fetch('./api/config',{cache:'no-store'});if(!r.ok)return false;const d=await r.json();if(d&&d.configured&&d.url&&d.key){const c=config();if(c.url!==d.url||c.key!==d.key)setConfig(d.url,d.key);envOk=true;return true}}catch(_){}return false}
+async function loadEnvConfig(){try{const r=await fetch('/api/config',{cache:'no-store'});if(!r.ok)return false;const d=await r.json();if(d&&d.configured&&d.url&&d.key){const c=config();if(c.url!==d.url||c.key!==d.key)setConfig(d.url,d.key);envOk=true;return true}}catch(_){}return false}
 const ready=loadEnvConfig().then(ok=>{schedule(800);return ok});
 async function recover(email){email=String(email||'').trim();if(!email)throw Error('Isi email terlebih dahulu.');await api('/auth/v1/recover?redirect_to='+encodeURIComponent(location.origin+'/'),{method:'POST',body:{email}});return true}
 async function updatePassword(password){if(!recoveryToken)throw Error('Tautan reset password sudah tidak berlaku. Minta tautan baru.');if(String(password||'').length<6)throw Error('Password baru minimal 6 karakter.');await api('/auth/v1/user',{method:'PUT',token:recoveryToken,body:{password},retryAuth:false});recoveryToken=null;status('Password berhasil diganti. Silakan masuk dengan password baru.');return true}

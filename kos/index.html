@@ -423,7 +423,7 @@ function ensureBillFor(tenantId,period=monthNow()){return ensureBillInKos(active
 async function requestPersistentStorage(){try{if(typeof navigator!=='undefined'&&navigator.storage?.persist)await navigator.storage.persist()}catch(_){} }
 function broadcastState(){try{APP.syncChannel?.postMessage({type:'kosman-state',source:APP.instance,rev:Number(APP.state?.meta?.rev)||0,updatedAt:APP.state?.meta?.updatedAt||''})}catch(_){} }
 async function persistState({broadcast=true}={}){
- const snapshot=JSON.stringify(APP.state);if(!storageSet(KEY,snapshot)&&!APP.lsWarned){APP.lsWarned=true;toast('Cadangan di localStorage penuh. Data tetap di IndexedDB — segera buat backup JSON.')}
+ const snapshot=JSON.stringify(APP.state);if(!storageSet(KEY,snapshot)&&!APP.lsWarned){APP.lsWarned=true;toast('Cadangan di localStorage penuh. Data tetap di IndexedDB — segera buat backup JSON.')}else window.SupabaseSync?.schedule();
  APP.persistQueue=APP.persistQueue.then(()=>dbPut('state',snapshot)).catch(e=>{console.warn('KosMan save:',e);toast('Data sudah diperbarui di layar, tetapi storage utama gagal. Segera backup.')});
  const result=await APP.persistQueue;if(broadcast)broadcastState();if(broadcast&&!CLOUD.suppress)cloudSchedulePush();return result;
 }
@@ -776,7 +776,8 @@ async function boot(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(e=>console.warn('KosMan SW',e))})}
 </script>
-<script>/* v26: ikuti tema aplikasi utama (Green Colorful / Midnight Green) */
+<script>if(window.top===window){const s=document.createElement('script');s.src='../supabase-sync.js';document.body.appendChild(s)} /* hanya saat Kos dibuka sendiri; di dalam aplikasi utama sinkron dijalankan induknya */
+/* v26: ikuti tema aplikasi utama (Green Colorful / Midnight Green) */
 (function(){function apply(){document.body.classList.add('warm');try{var th=localStorage.getItem('uangku-theme')||'green-colorful',dark=/midnight/.test(th);document.body.classList.toggle('midnight',dark);document.documentElement.style.colorScheme=dark?'dark':'light'}catch(e){}}
 apply();addEventListener('storage',function(e){if(!e.key||e.key==='uangku-theme')apply()});addEventListener('load',apply)})();</script>
 </body>
