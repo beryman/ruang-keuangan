@@ -1,0 +1,17 @@
+{
+  "name": "KosMan — Manajemen Kos",
+  "short_name": "KosMan",
+  "description": "Kamar, penyewa, tagihan, dan pembayaran kos.",
+  "lang": "id",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f6eee4",
+  "theme_color": "#a85d32",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
