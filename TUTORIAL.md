@@ -48,6 +48,28 @@ Saat ini data tersimpan lokal di browser/perangkat. Artinya, data yang dibuat di
 Sinkronisasi lintas perangkat tersedia setelah menghubungkan project Supabase. Ikuti bagian E. Siapkan **Project URL** dan **anon/public key**; jangan masukkan `service_role` key di aplikasi browser.
 
 
+## v41: Suara (🎤) diperbaiki untuk iPhone
+
+- **iPhone/iPad:** tombol 🎤 sekarang **merekam** suara (tombol merah ■ dan hitungan detik). Ketuk ■ saat selesai bicara; dalam 2–4 detik Gemini mengubahnya jadi teks di Catat Cepat. Maksimal 15 detik per rekaman.
+- **Android/Chrome:** tetap memakai pengenalan suara bawaan (langsung muncul saat bicara). Bug kata dobel sudah diperbaiki.
+- **Mac Safari / browser lain:** jika pengenalan suara bawaan ditolak atau tidak merespons dalam 3 detik, aplikasi otomatis beralih ke perekam + Gemini.
+- Butuh internet dan API key Gemini yang sama dengan Scan Nota (atau GEMINI_API_KEY di Vercel). Izin mikrofon iPhone: Pengaturan › Safari › Mikrofon › Izinkan.
+
+## v40: Piutang & Tagihan Kos tersinkron
+
+- **Menu Piutang** sekarang bernama "Piutang & Kekurangan Sewa": kekurangan sewa bulan-bulan sebelumnya otomatis muncul (label "Kekurangan sewa · otomatis dari Tagihan"), bersama piutang manual seperti listrik. Totalnya ikut dijumlah.
+- **Menu Tagihan** punya kolom **Tunggakan & Piutang**: sisa sewa bulan lalu + piutang per penyewa, dan "Total harus dibayar". Tombol Bayar muncul walau bulan ini sudah lunas tapi masih ada tunggakan.
+- Tombol **Bayar** di kedua menu otomatis mengisi total kewajiban; pembayaran menutup tagihan terlama dulu, lalu piutang.
+
+## v39: Invoice Kos lebih lengkap
+
+- **Banyak bukti transfer:** di Kos › Invoice, tombol "📎 Lampirkan bukti transfer (bisa banyak)" menerima beberapa foto sekaligus (maks. 10 per pembayaran). Foto kecil di bawah tombol bisa dihapus satu per satu (×).
+- **Bukti cicilan ikut tampil:** bila tagihan dibayar dicicil, invoice menampilkan bukti transfer cicilan lain untuk tagihan yang sama, lengkap dengan keterangan "Cicilan 2 · tanggal · nominal".
+- **Masa sewa:** invoice menulis periode yang dibayar, mis. "5 Oktober 2026 – 4 November 2026", plus tanggal jatuh tempo.
+- **Riwayat cicilan:** daftar cicilan untuk tagihan yang sama dan totalnya.
+- **Kekurangan bayar:** semua sisa tagihan/piutang penyewa per hari ini, per bulan dan nominal kurangnya, plus total. Jika lunas tampil "✓ Tidak ada kekurangan bayar".
+- Semua bagian ini ikut tercetak / tersimpan sebagai PDF.
+
 ## v38: Kos menyatu & tombol ＋
 
 - **Tombol ＋ minggir saat menggulir ke bawah** dan muncul lagi saat menggulir ke atas, jadi tidak menutupi nominal. Pil status sinkron di pojok atas juga ikut minggir.

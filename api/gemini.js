@@ -46,7 +46,7 @@ module.exports = async function handler(req, res) {
     try { input = JSON.parse(input); }
     catch { return res.status(400).json({ error: 'Isi permintaan OCR tidak valid.' }); }
   }
-  const { apiKey, model, prompt, image, schema } = input || {};
+  const { apiKey, model, prompt, image, schema, audio } = input || {};
   // Key yang diisi pengguna di aplikasi diprioritaskan; jika kosong baru pakai env Vercel.
   const key = String(apiKey || process.env.GEMINI_API_KEY || '').trim();
   if (!key) {
@@ -66,9 +66,18 @@ module.exports = async function handler(req, res) {
     }
   }
 
+  let audioData = '';
+  if (audio) {
+    audioData = String(audio.data || '').replace(/^data:[^,]+,/, '');
+    if (!audioData || audioData.length > 4_000_000 || !/^audio\/(wav|x-wav|mpeg|mp3|aac|ogg|flac|aiff|webm|mp4)$/.test(audio.mimeType || '')) {
+      return res.status(413).json({ error: 'Rekaman suara harus berformat audio yang didukung dan tidak melebihi batas ukuran (rekam maks. ±15 detik).' });
+    }
+  }
+
   // Urutan instruksi: gambar dulu, teks sesudahnya (rekomendasi Google untuk OCR/visi).
   const parts = [];
   if (image) parts.push({ inline_data: { mime_type: image.mimeType, data: imageData } });
+  if (audio) parts.push({ inline_data: { mime_type: audio.mimeType, data: audioData } });
   parts.push({ text: prompt });
 
   const baseConfig = { maxOutputTokens: 8192, temperature: 0 };

@@ -1,4 +1,4 @@
-const CACHE='uangku-shell-v34';
+const CACHE='uangku-shell-v37';
 const CORE=['./','./index.html','./manifest.webmanifest','./db-app-icon.png','./icon-192.png','./icon-512.png','./supabase-sync.js','./rekap-pdf.js','./kos/index.html','./kos/manifest.webmanifest','./kos/icon-192.png','./kos/icon-512.png','./kos/apple-touch-icon.png'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
