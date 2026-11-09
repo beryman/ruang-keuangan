@@ -55,7 +55,7 @@ module.exports = async function handler(req, res) {
   if (typeof model !== 'string' || !/^gemini-[a-zA-Z0-9._-]+$/.test(model)) {
     return res.status(400).json({ error: 'Nama model Gemini tidak valid.' });
   }
-  if (typeof prompt !== 'string' || !prompt.trim() || prompt.length > 12000) {
+  if (typeof prompt !== 'string' || !prompt.trim() || prompt.length > (image ? 12000 : 90000)) {
     return res.status(400).json({ error: 'Prompt OCR tidak valid.' });
   }
   let imageData = '';

@@ -48,6 +48,62 @@ Saat ini data tersimpan lokal di browser/perangkat. Artinya, data yang dibuat di
 Sinkronisasi lintas perangkat tersedia setelah menghubungkan project Supabase. Ikuti bagian E. Siapkan **Project URL** dan **anon/public key**; jangan masukkan `service_role` key di aplikasi browser.
 
 
+## v38: Kos menyatu & tombol ＋
+
+- **Tombol ＋ minggir saat menggulir ke bawah** dan muncul lagi saat menggulir ke atas, jadi tidak menutupi nominal. Pil status sinkron di pojok atas juga ikut minggir.
+- **Kos di HP/iPad** memakai menu bergaya aplikasi utama: Dashboard, Tagihan, Pembayaran, Penyewa, dan **Lainnya** (berisi menu lain + pilihan kos bila punya lebih dari satu).
+- **Tarik ke bawah di halaman Kos** untuk sinkron, sama seperti halaman lain.
+- **Tombol ＋ di halaman Kos** menjalankan "+ Tambah" milik Kos sesuai menu yang sedang dibuka (mis. Kamar → tambah kamar). Tombol ini otomatis disembunyikan saat jendela Kos terbuka agar tidak menutupi tombol Simpan.
+- Saat dibuka dari aplikasi utama, Kos tidak lagi menampilkan logo KOSMAN, label "Administrator", dan tombol Refresh/Sinkronkan ganda — sinkron diatur dari pil status di pojok atas.
+
+## Kenyamanan v37
+
+- **Nominal otomatis berformat** saat mengetik (1.250.000).
+- **Tombol tanggal cepat** di form: Hari ini, Kemarin, 2 hari lalu.
+- **Transaksi favorit:** centang "Simpan juga sebagai favorit" saat mencatat. Favorit muncul sebagai tombol ⭐ di bawah Catat Cepat; sekali ketuk langsung tercatat hari ini. Tekan **✎ Atur** untuk menghapus.
+- **Hapus tanpa konfirmasi + Batalkan:** transaksi langsung terhapus, lalu muncul tombol **Batalkan** selama 6 detik.
+- **Status sinkron** di pojok kanan atas: ✓ Tersimpan, ⟳ Sinkron…, ⚠ Offline / Belum sinkron. Ketuk untuk sinkron sekarang.
+- **Angka di ikon aplikasi** = jumlah penyewa Kos yang perlu ditagih (Android, Mac, iPhone iOS 16.4+ yang dipasang di layar utama).
+- **Tarik ke bawah** di HP untuk sinkron.
+- **Ukuran teks** Normal/Besar di Pengaturan › Tema tampilan.
+- **Layar pembuka** hijau saat dibuka dari ikon iPhone/iPad (pasang ulang ikon agar muncul).
+- **Mode privasi:** tombol 👁 di pojok kanan atas menyamarkan semua nominal (Rp •••••). PDF dan teks yang disalin tetap berisi angka asli.
+
+## Tampilan v36
+
+- **HP:** menu bawah berisi Dashboard, Transaksi, Rosario, Kos, dan **Lainnya**. Lainnya membuka Manajemen Uangku, Tunai, Anggaran, Target, dan Pengaturan.
+- **Tunai** menjadi satu menu dengan tab Dinar, Bagas, dan Bersama. Tab terakhir yang dibuka diingat.
+- **Tombol ＋ bulat** di kanan bawah (HP dan tablet) untuk menambah transaksi. Di Rosario membuka form Kantorku, di Tunai akunnya langsung terisi.
+- **Daftar transaksi di HP** berupa kartu yang dikelompokkan per hari ("Hari ini", "Kemarin"). Ketuk kartu untuk mengedit.
+- **Catat Cepat di layar kecil:** tombol Simpan menjadi ikon ✓.
+- **Tabel Kos di HP** tampil sebagai kartu, tidak perlu digeser ke samping.
+- **iPad mendatar / layar lebar:** form transaksi muncul sebagai panel kanan, daftar transaksi tetap terlihat di kiri.
+
+## Fitur v34
+
+- **Peringatan anggaran saat mencatat:** setelah menyimpan pengeluaran (form, Catat Cepat, Scan Nota), muncul pesan bila kategori sudah 80% atau melewati anggaran bulan itu.
+- **Ringkasan akhir bulan otomatis:** di awal bulan, Dashboard menampilkan kartu ringkasan bulan lalu (pemasukan, pengeluaran, disisihkan, kategori terbesar, anggaran terlampaui) dengan tombol unduh PDF. Tekan **Tutup** agar tidak muncul lagi.
+- **Tanya data keuanganmu:** panel di Dashboard. Ketik pertanyaan (mis. "berapa makan bulan lalu?"); ringkasan data dikirim ke Gemini. Memakai API key yang sama dengan Scan Nota. Jawaban AI bisa keliru, cek angka penting.
+- **Backup otomatis mingguan:** tiap 7 hari saat aplikasi dibuka. Bila sudah login, file disimpan di cloud (8 terakhir); bila tidak, file .json diunduh (iPhone hanya mengingatkan). Atur dan pulihkan di **Pengaturan → Backup**.
+- **Reimburse:** centang **Talangan kantor** saat mencatat pengeluaran pribadi untuk kantor. Di **Rosario → Dashboard** ada daftar talangan; tandai yang sudah diganti, maka saldo pribadi bertambah dan Saldo Kantorku berkurang otomatis. Bisa dibatalkan.
+- **Laporan per kamar (Kos):** menu Laporan → Laporan per Kamar: bulan terisi/kosong, pendapatan, perawatan, beban bersama, dan untung per kamar per tahun.
+- **Akses bersama pasangan:** jalankan ulang `supabase/schema.sql`. Di **Pengaturan → Berbagi data**, undang email pasangan; pasangan login dengan akunnya sendiri lalu tekan **Cari undangan → Gabung**. Data di perangkat pasangan diganti data bersama (salinan lama dicadangkan). Transaksi menampilkan siapa yang mencatat bila ada dua pencatat.
+
+## Fitur v33
+
+- **Kos → akun keuangan:** saat *Catat Pembayaran* atau *Tambah Pengeluaran* di Kos, pilih akun (mis. BCA / Tunai Dinar). Transaksinya otomatis muncul di Manajemen Uangku (tanda 🏠 dari Kos) sebagai Transfer Masuk/Keluar, saldo akun langsung cocok. Ubah/hapus cukup dari Kos — transaksi keuangannya ikut. Akun terakhir yang dipilih diingat.
+- **Scan bukti transfer:** Kos → Pembayaran → *📷 Scan bukti TF*. Gemini membaca nominal, tanggal, pengirim, dan nomor referensi, mencocokkan penyewa, lalu mengisi form. Ada peringatan bila nomor referensi sudah pernah dicatat, status gagal/pending, atau penyewa tidak pasti. Setelah disimpan, bukti terlampir dan invoice berstempel langsung terbuka. (Buka Kos dari menu Kos di aplikasi utama.)
+- **Catat cepat:** kotak ⚡ di Dashboard, Manajemen Uangku, dan Transaksi. Contoh: `makan siang 25rb gopay`, `gaji 5jt bca`, `bensin 50 ribu tunai dinar kemarin`, `+200000 tunai bersama jual barang`. Tekan Enter; ada tombol *Batalkan*. Tanpa akun → memakai akun terakhir. 🎤 untuk mengucapkan (Chrome/Android).
+- **Pintasan ikon:** tekan lama ikon aplikasi (Android/desktop Chrome) → Catat cepat, Tambah transaksi, Scan nota, Catat bayar kos. Pasang ulang aplikasi bila pintasan belum muncul. iPhone belum mendukung fitur ini.
+
+## Fitur v32
+
+- **WAJIB sekali:** buka Supabase → SQL Editor, jalankan ulang seluruh isi `supabase/schema.sql` (membuat bucket privat `receipts` untuk foto). Tanpa ini foto tetap aman di perangkat, hanya belum pindah ke cloud.
+- **Foto di cloud:** foto nota & bukti transfer otomatis dipindah ke Supabase Storage saat online dan login. Data sinkron jadi kecil sehingga sinkron antarperangkat tetap cepat. Foto lama ikut dipindah otomatis.
+- **Pengingat tagihan Kos:** Dashboard utama menampilkan penyewa yang terlambat atau jatuh tempo ≤ H-Reminder (Kos → Setting). Tekan *Aktifkan notifikasi* agar muncul notifikasi saat aplikasi dibuka. Di Kos → Dashboard, tombol **WA** membuka pesan tagihan yang sudah terisi dan menandai "diingatkan hari ini".
+- **Transaksi berulang:** centang *Ulangi otomatis tiap bulan* saat menambah transaksi. Kelola/hentikan di Transaksi → 🔁 Transaksi berulang.
+- **Kategori otomatis:** keterangan yang sama dengan transaksi sebelumnya langsung mengisi kategori & subkategori; impor CSV BCA juga memakai tebakan ini.
+
 ## Fitur v26
 
 - **Tampilan mingguan + PDF**: di Transaksi, Rosario (Transaksi Kantorku), dan halaman Tunai ada tombol *Mingguan* (Senin–Minggu). Gunakan panah, kotak tanggal, atau *Minggu ini*, lalu tekan *PDF Mingguan*.

@@ -71,23 +71,44 @@ async function api(path,{method='GET',body,token,headers:extra={},retryAuth=true
     if(res.status===401&&retryAuth&&token&&session()?.refresh_token){const s=await refresh(true,token);if(s?.access_token)return api(path,{method,body,token:s.access_token,headers:extra,retryAuth:false})}
     throw mkErr(data.msg||data.message||data.error_description||data.error||'Supabase error '+res.status,{status:res.status,code:data.code})}
   return data}
+const OWNER_KEY='uangku-sb-owner',OWNER_FOR='uangku-sb-owner-for',OWNER_EMAIL='uangku-sb-owner-email';
+const dataUid=s=>{const o=ls.get(OWNER_KEY);return o&&ls.get(OWNER_FOR)===uidOf(s)?o:uidOf(s)};
 const uidOf=s=>{if(s?.user?.id)return s.user.id;try{return JSON.parse(atob(s.access_token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).sub}catch(_){return null}};
 async function signUp(email,password){const r=await api('/auth/v1/signup',{method:'POST',body:{email,password}});if(r.access_token){r.expires_at=Date.now()/1000+Number(r.expires_in||3600);write(K.session,r)}return r}
 let seenAt=null;
-async function probe(){const s=await refresh();if(!s?.access_token)return undefined;const rows=await api('/rest/v1/app_snapshots?select=updated_at&user_id=eq.'+encodeURIComponent(uidOf(s))+'&limit=1',{token:s.access_token});return rows?.[0]?.updated_at||null}
+async function probe(){const s=await refresh();if(!s?.access_token)return undefined;const rows=await api('/rest/v1/app_snapshots?select=updated_at&user_id=eq.'+encodeURIComponent(dataUid(s))+'&limit=1',{token:s.access_token});return rows?.[0]?.updated_at||null}
 async function getRemote(){
   const s=await refresh();if(!s?.access_token)throw mkErr('Silakan login ke Supabase.',{auth:true});
-  const rows=await api('/rest/v1/app_snapshots?select=payload,updated_at&user_id=eq.'+encodeURIComponent(uidOf(s))+'&limit=1',{token:s.access_token});
+  const rows=await api('/rest/v1/app_snapshots?select=payload,updated_at&user_id=eq.'+encodeURIComponent(dataUid(s))+'&limit=1',{token:s.access_token});
   const r=Array.isArray(rows)?(rows[0]||null):null;seenAt=r?.updated_at||null;return r}
 /* true = tersimpan; false = ada perangkat lain yang menulis lebih dulu (ulangi) */
 async function writeRemote(s,remote,payload,force){
-  const uid=uidOf(s),updated_at=new Date().toISOString();
+  const uid=dataUid(s),updated_at=new Date().toISOString();
   if(force){const r=await api('/rest/v1/app_snapshots?on_conflict=user_id',{method:'POST',token:s.access_token,body:{user_id:uid,payload,updated_at},headers:{Prefer:'resolution=merge-duplicates,return=representation'}});seenAt=r?.[0]?.updated_at||seenAt;return true}
   if(!remote){
     try{const r=await api('/rest/v1/app_snapshots',{method:'POST',token:s.access_token,body:{user_id:uid,payload,updated_at},headers:{Prefer:'return=representation'}});seenAt=r?.[0]?.updated_at||seenAt;return true}
     catch(e){if(e.status===409||e.code==='23505'||/duplicate key/i.test(e.message))return false;throw e}}
   const rows=await api('/rest/v1/app_snapshots?user_id=eq.'+encodeURIComponent(uid)+'&updated_at=eq.'+encodeURIComponent(remote.updated_at),{method:'PATCH',token:s.access_token,body:{payload,updated_at},headers:{Prefer:'return=representation'}});
   if(Array.isArray(rows)&&rows.length){seenAt=rows[0].updated_at||seenAt;return true}return false}
+
+/* ---------- foto di Supabase Storage (bucket privat 'receipts', folder per akun) ---------- */
+const BUCKET='receipts',photoCache=new Map();
+const b64Blob=d=>{const s=atob(d),a=new Uint8Array(s.length);for(let i=0;i<s.length;i++)a[i]=s.charCodeAt(i);return new Blob([a],{type:'image/jpeg'})};
+const canUpload=()=>!!session()?.refresh_token&&!!config().url&&navigator.onLine;
+async function storageReq(method,key,body,type='image/jpeg'){
+  const s=await refresh();if(!s?.access_token)throw mkErr('Silakan login ke Supabase.',{auth:true});
+  const c=config(),uid=dataUid(s),url=c.url+'/storage/v1/object/'+(method==='GET'?'authenticated/':'')+BUCKET+'/'+uid+'/'+encodeURIComponent(key);
+  const res=await fetchT(url,{method,headers:{apikey:c.key,Authorization:'Bearer '+s.access_token,...(body?{'Content-Type':type,'x-upsert':'true'}:{})},body},30000);
+  if(!res.ok){let m='';try{const j=await res.json();m=j.message||j.error||''}catch(_){}if(/bucket not found/i.test(m))m='Bucket "receipts" belum ada. Jalankan ulang supabase/schema.sql terbaru di SQL Editor.';throw mkErr(m||'Storage error '+res.status,{status:res.status})}
+  return res}
+/* unggah base64 → kembalikan key; foto tetap utuh di perangkat bila gagal */
+async function uploadPhoto(key,d){await storageReq('POST',key,b64Blob(d));photoCache.set(key,b64Blob(d));return key}
+async function photoBlob(o){if(!o)throw Error('Foto tidak ada');if(o.d)return b64Blob(o.d);if(!o.p)throw Error('Foto tidak ada');
+  if(photoCache.has(o.p))return photoCache.get(o.p);
+  if(!navigator.onLine)throw Error('Foto tersimpan di cloud; sambungkan internet untuk melihatnya.');
+  const b=await (await storageReq('GET',o.p)).blob();photoCache.set(o.p,b);return b}
+async function photoURL(o){const b=await photoBlob(o);return await new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=no;r.readAsDataURL(b)})}
+async function deletePhoto(o){if(!o?.p||!canUpload())return;try{await fetchT(config().url+'/storage/v1/object/'+BUCKET,{method:'DELETE',headers:{apikey:config().key,Authorization:'Bearer '+(await refresh()).access_token,'Content-Type':'application/json'},body:JSON.stringify({prefixes:[dataUid(session())+'/'+o.p]})});photoCache.delete(o.p)}catch(_){}}
 
 /* ---------- penggabungan ---------- */
 const parseJ=s=>{try{return s?JSON.parse(s):null}catch(_){return null}};
@@ -200,7 +221,7 @@ async function signIn(email,password){
 async function signOut(){
   const s=session();
   try{if(s?.access_token)await api('/auth/v1/logout',{method:'POST',token:s.access_token,retryAuth:false})}catch(_){}
-  finally{[K.session,K.auto,K.baseW,K.baseK,K.choice,K.remote,K.legacyBase].forEach(ls.del);clearTimeout(timer);status('Keluar dari Supabase. Data lokal perangkat tidak dihapus.')}}
+  finally{[K.session,K.auto,K.baseW,K.baseK,K.choice,K.remote,K.legacyBase,OWNER_KEY,OWNER_FOR,OWNER_EMAIL].forEach(ls.del);clearTimeout(timer);status('Keluar dari Supabase. Data lokal perangkat tidak dihapus.')}}
 async function syncNow(){
   setAutoSync(true);
   const o=await exclusive(()=>syncCycle({manual:true}));failCount=0;status(outcomeMessage(o));return o}
@@ -227,6 +248,52 @@ async function restoreBackup(i=0){
     const L=localParts();backup('Sebelum memulihkan cadangan');
     const final={wallet:b.wallet??L.wallet,kos:b.kos??L.kos};
     await applyLocal(final,L);status('Cadangan dipulihkan ('+hhmm()+'). Perubahan akan dikirim ke cloud.');schedule(500)})}
+
+/* ---------- backup cloud mingguan: file bk-YYYY-MM-DD.json di folder akun (8 terakhir) ---------- */
+async function listCloudBackups(){
+  const s=await refresh();if(!s?.access_token)throw mkErr('Silakan login ke Supabase.',{auth:true});
+  const rows=await api('/storage/v1/object/list/'+BUCKET,{method:'POST',token:s.access_token,body:{prefix:dataUid(s),limit:200,sortBy:{column:'name',order:'desc'}}});
+  return (Array.isArray(rows)?rows:[]).filter(o=>/^bk-\d{4}-\d{2}-\d{2}\.json$/.test(o.name||'')).map(o=>({name:o.name,size:o.metadata?.size||0,at:o.updated_at||''}))}
+async function putBackup(){
+  const p=localParts();if(!p.wallet&&!p.kos)throw Error('Belum ada data untuk dicadangkan.');
+  const name='bk-'+new Date().toISOString().slice(0,10)+'.json';
+  await storageReq('POST',name,new Blob([JSON.stringify({app:'uangku-backup',v:1,at:new Date().toISOString(),wallet:p.wallet,kos:p.kos})],{type:'application/json'}),'application/json');
+  try{for(const o of (await listCloudBackups()).slice(8))await deletePhoto({p:o.name})}catch(_){}
+  return name}
+async function getCloudBackup(name){if(!/^bk-\d{4}-\d{2}-\d{2}\.json$/.test(name))throw Error('Nama cadangan tidak valid.');return (await storageReq('GET',name)).text()}
+async function restoreBackupText(text){
+  let b;try{b=JSON.parse(text)}catch(_){throw Error('File cadangan tidak valid.')}
+  if(!b||b.app!=='uangku-backup'||(typeof b.wallet!=='string'&&typeof b.kos!=='string'))throw Error('Ini bukan file cadangan Manajemen Uangku.');
+  try{if(b.wallet)JSON.parse(b.wallet);if(b.kos)JSON.parse(b.kos)}catch(_){throw Error('Isi cadangan rusak.')}
+  return exclusive(async()=>{
+    const L=localParts();backup('Sebelum memulihkan file cadangan');
+    const final={wallet:b.wallet??L.wallet,kos:b.kos??L.kos};
+    await applyLocal(final,L);status('Cadangan dipulihkan ('+hhmm()+'). Perubahan akan dikirim ke cloud.');schedule(500)})}
+
+/* ---------- berbagi data (pasangan): tabel snapshot_members, lihat supabase/schema.sql ---------- */
+const sharedOwner=()=>{const s=session(),o=ls.get(OWNER_KEY);return s&&o&&ls.get(OWNER_FOR)===uidOf(s)?o:''};
+async function listMembers(){const s=await refresh();return api('/rest/v1/snapshot_members?select=member_email,created_at&owner_id=eq.'+encodeURIComponent(uidOf(s))+'&order=created_at.asc',{token:s.access_token})}
+async function addMember(email){
+  email=String(email||'').trim().toLowerCase();if(!/^\S+@\S+\.\S+$/.test(email))throw Error('Email tidak valid.');
+  const s=await refresh(),me=String(s?.user?.email||'').toLowerCase();if(!s?.access_token)throw mkErr('Silakan login ke Supabase.',{auth:true});
+  if(email===me)throw Error('Itu email Anda sendiri.');
+  await api('/rest/v1/snapshot_members?on_conflict=owner_id,member_email',{method:'POST',token:s.access_token,body:{owner_id:uidOf(s),owner_email:me,member_email:email},headers:{Prefer:'resolution=ignore-duplicates,return=minimal'}})}
+async function removeMember(email){const s=await refresh();await api('/rest/v1/snapshot_members?owner_id=eq.'+encodeURIComponent(uidOf(s))+'&member_email=eq.'+encodeURIComponent(String(email).toLowerCase()),{method:'DELETE',token:s.access_token})}
+async function findInvites(){const s=await refresh(),me=String(s?.user?.email||'').toLowerCase();return api('/rest/v1/snapshot_members?select=owner_id,owner_email&member_email=eq.'+encodeURIComponent(me)+'&owner_id=neq.'+encodeURIComponent(uidOf(s)),{token:s.access_token})}
+async function joinOwner(ownerId,ownerEmail){
+  if(!/^[0-9a-f-]{36}$/i.test(String(ownerId)))throw Error('ID pemilik tidak valid.');
+  return exclusive(async()=>{
+    const s=await refresh();if(!s?.access_token)throw mkErr('Silakan login ke Supabase.',{auth:true});
+    const rows=await api('/rest/v1/app_snapshots?select=payload,updated_at&user_id=eq.'+encodeURIComponent(ownerId)+'&limit=1',{token:s.access_token}),r=rows?.[0];
+    if(!r)throw Error('Pemilik belum menyimpan data ke cloud, atau akses belum diberikan.');
+    const R=remoteParts(r),L=localParts();if(R.wallet)JSON.parse(R.wallet);if(R.kos)JSON.parse(R.kos);
+    backup('Sebelum bergabung ke data bersama');
+    ls.set(OWNER_KEY,ownerId);ls.set(OWNER_FOR,uidOf(s));ls.set(OWNER_EMAIL,ownerEmail||'');
+    const final={wallet:R.wallet??L.wallet,kos:R.kos??L.kos};
+    await applyLocal(final,L);markBases(final);lastSeen={wallet:ph('wallet',final.wallet),kos:ph('kos',final.kos)};seenAt=r.updated_at||null;ls.set(K.auto,'1');
+    status('Bergabung ke data bersama ('+hhmm()+').');
+    if(!window.UangkuApp?.reloadFromStorage)setTimeout(()=>location.reload(),400)})}
+function leaveOwner(){[OWNER_KEY,OWNER_FOR,OWNER_EMAIL,K.baseW,K.baseK,K.remote,K.auto].forEach(ls.del);seenAt=null;clearTimeout(timer);status('Keluar dari data bersama. Sinkronisasi otomatis dimatikan; data di perangkat ini tetap ada.')}
 
 /* ---------- pemicu otomatis ---------- */
 window.addEventListener('storage',e=>{if([WALLET_KEY,KOS_KEY].includes(e.key))schedule()});
@@ -256,5 +323,5 @@ function friendlyError(m){m=String(m||'');
   if(/jwt expired|invalid jwt/i.test(m))return 'Sesi kedaluwarsa. Silakan masuk kembali.';
   return m||'Terjadi kesalahan.'}
 const userEmail=()=>session()?.user?.email||'';
-window.SupabaseSync={ready,envConfigured:()=>envOk,recover,updatePassword,recoveryPending:()=>!!recoveryToken,friendlyError,userEmail,config,session,setConfig,signUp,signIn,signOut,getRemote,pushLocal,pullRemote,setAutoSync,autoEnabled,schedule,reconcile,syncNow,restoreBackup,backups,lastStatus:()=>ls.get(K.status)||'',needsChoice};
+window.SupabaseSync={putBackup,listCloudBackups,getCloudBackup,restoreBackupText,sharedOwner,sharedOwnerEmail:()=>ls.get(OWNER_EMAIL)||'',listMembers,addMember,removeMember,findInvites,joinOwner,leaveOwner,uploadPhoto,photoBlob,photoURL,deletePhoto,canUpload,ready,envConfigured:()=>envOk,recover,updatePassword,recoveryPending:()=>!!recoveryToken,friendlyError,userEmail,config,session,setConfig,signUp,signIn,signOut,getRemote,pushLocal,pullRemote,setAutoSync,autoEnabled,schedule,reconcile,syncNow,restoreBackup,backups,lastStatus:()=>ls.get(K.status)||'',needsChoice};
 })();

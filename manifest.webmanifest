@@ -23,5 +23,56 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Catat cepat",
+      "short_name": "Catat cepat",
+      "description": "Ketik satu baris, mis. makan 25rb gopay",
+      "url": "/?action=quick",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Tambah transaksi",
+      "short_name": "Tambah",
+      "url": "/?action=add",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Scan nota",
+      "short_name": "Scan nota",
+      "url": "/?action=scan",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Catat bayar kos",
+      "short_name": "Bayar kos",
+      "url": "/?action=kospay",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
   ]
 }

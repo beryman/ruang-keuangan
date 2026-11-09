@@ -32,7 +32,7 @@ Koneksi Supabase tersedia melalui menu Pengaturan setelah URL project dan public
 Email/password pengguna tidak disimpan oleh aplikasi. Token login dan anon key disimpan lokal pada browser. Tabel memakai RLS dengan `auth.uid() = user_id`, jadi akun hanya bisa mengakses snapshot miliknya.
 
 ## Sinkronisasi Supabase (v11)
-- Jalankan `supabase/schema.sql` sekali di SQL Editor Supabase (tabel `app_snapshots` + RLS). Tidak ada perubahan skema.
+- Jalankan ulang `supabase/schema.sql` di SQL Editor Supabase (aman diulang). v34 menambah tabel `snapshot_members` dan memperluas kebijakan akses untuk fitur berbagi data dengan pasangan; backup cloud memakai bucket `receipts` yang sudah ada. Pastikan konfirmasi email Supabase tetap aktif.
 - Setelah login, sinkronisasi otomatis aktif: perubahan dikirim ±1 detik setelah disimpan, dan perubahan dari perangkat lain diterapkan tanpa memuat ulang halaman.
 - Jika dua perangkat mengubah data yang sama, aplikasi menggabungkan transaksi secara otomatis dan menyimpan salinan data lama. Kembalikan lewat Pengaturan › "Kembalikan data sebelum sinkron".
 - Saat offline atau server error, perubahan tetap aman di perangkat dan dicoba lagi otomatis.
