@@ -48,6 +48,20 @@ Saat ini data tersimpan lokal di browser/perangkat. Artinya, data yang dibuat di
 Sinkronisasi lintas perangkat tersedia setelah menghubungkan project Supabase. Ikuti bagian E. Siapkan **Project URL** dan **anon/public key**; jangan masukkan `service_role` key di aplikasi browser.
 
 
+## v42: Perbaikan bug dan tampilan
+
+- **Kartu "Saldo akhir gabungan"** di Manajemen Uangku kini terbaca (dulu teks putih di atas hijau muda pada tema Green Colorful).
+- **Menu bawah di HP** menampilkan kelima tombol utuh; "Lainnya" tidak lagi terpotong.
+- **Daftar transaksi** di layar laptop/tablet memakai tampilan kartu, sehingga jumlah dan tombol hapus tidak lagi tersembunyi di kanan tabel.
+- **Grafik:** warna legenda sama dengan batang, periode kosong menampilkan keterangan, dan mode privasi ikut menyamarkan angka di grafik.
+- **Tombol Esc** menutup form transaksi, form target, dan foto nota.
+- **Suara:** mengetuk tombol mikrofon dua kali saat izin diminta tidak lagi membuka dua rekaman.
+- **Offline:** judul dan angka tidak lagi berubah ke huruf serif saat font web tidak termuat; halaman tampil tanpa menunggu Google Fonts.
+- **Tampilan:** teks minimal 12px, kontras warna memenuhi WCAG AA di kedua tema, tombol di HP minimal 44px, warna solid tanpa gradien, ikon emoji diganti ikon garis atau teks. Tombol status sinkron dan mode privasi kini ada di baris judul.
+- **Kos:** tombol "Scan bukti TF" tidak lagi mati setelah dipakai sekali; tabel Tagihan dan lainnya memakai tampilan kartu di layar di bawah 1180px sehingga tombol Edit/Hapus/Bayar tidak terpotong; invoice tetap terbaca di tema gelap; tampilan disamakan dengan aplikasi utama (teks minimal 12px, warna solid, tanpa ikon emoji).
+- **Pengingat tagihan di Dashboard** kini memakai aturan yang sama dengan "Perlu Ditagih" di Kos: nominal ikut menghitung piutang, dan penyewa yang masih punya sisa kewajiban selalu tampil.
+- Setelah deploy, buka aplikasi sekali saat online agar versi baru termuat.
+
 ## v41: Suara (🎤) diperbaiki untuk iPhone
 
 - **iPhone/iPad:** tombol 🎤 sekarang **merekam** suara (tombol merah ■ dan hitungan detik). Ketuk ■ saat selesai bicara; dalam 2–4 detik Gemini mengubahnya jadi teks di Catat Cepat. Maksimal 15 detik per rekaman.
